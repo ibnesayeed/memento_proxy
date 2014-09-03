@@ -1,0 +1,6 @@
+# delo
+uwsgi --socket 127.0.0.1:9000 --wsgi-file wsgi.py --master --processes 12 --threads 20 --stats :9010
+# with log
+nohup uwsgi --socket 127.0.0.1:9000 --wsgi-file wsgi.py --master --processes 12 --threads 20 --stats :9010 > logs/uwsgi.log &
+# local
+uwsgi --http :9000 --wsgi-file wsgi.py --master --buffer-size 20000
