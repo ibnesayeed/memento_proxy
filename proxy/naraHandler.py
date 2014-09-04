@@ -2,6 +2,7 @@ import urllib
 import lxml.html
 from memento_proxy import *
 
+__author__ = "Robert Sanderson"
 
 #baseuri = "http://nara-wayback-001.us.archive.org/"
 baseuri = "http://webharvest.gov/"
@@ -27,8 +28,7 @@ class NaraHandler(MementoProxy):
                 dom = self.get_xml(uri, html=True)
             except:
                 return
-                #return self.error("Couldn't retrieve data from %s" % uri, req, status=404)
-            
+
             if dom:
                 rlist = dom.xpath('//*[@class="mainBody"]')
                 for td in rlist:

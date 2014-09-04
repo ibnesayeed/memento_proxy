@@ -1,6 +1,7 @@
 from lxml import etree
 from memento_proxy import *
 
+__author__ = "Robert Sanderson"
 
 baseuri = "http://www.screenshots.com/"
 
@@ -23,7 +24,7 @@ class SsHandler(MementoProxy):
         if req_url[-1] == '/':
             req_url = req_url[:-1]
         if req_url.find('/') > -1:
-            return []
+            return
         
         uri = baseuri + req_url + '/'
         dom = None

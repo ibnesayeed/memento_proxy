@@ -35,12 +35,12 @@ class CrHandler(MementoProxy):
             jsonobj = requests.get(uri).json()
         except Exception as e:
             print e
-            return None
+            return
 
         changes = []
 
         if int(jsonobj['availableHits']) == 0:
-            return changes
+            return
 
         tmid = jsonobj['hits'][0]['ID']
         tmuri = "http://haw.nsk.hr/publikacija/"+tmid
@@ -49,7 +49,7 @@ class CrHandler(MementoProxy):
         try:
             data = requests.get(tmuri).content
         except:
-            return None
+            return
 
         uriRegex =re.compile( r'<tr><td>[\d]*\.</td>.*</tr>')
         dtregex = re.compile('<td>\d\d\.\d\d\.\d\d\d\d[0-9\.:\s]*</td>')
@@ -63,7 +63,7 @@ class CrHandler(MementoProxy):
             result = dtregex.search( u)
             if result:
                dtstr = result.group(0)
-            dtstr= dtstr[4:-5]
+            dtstr = dtstr[4:-5]
 
             dtstr=dtstr[6:10]+dtstr[3:5]+dtstr[0:2]+dtstr[11:19].replace(":", "") + " GMT"
             dtobj = dateparser.parse(dtstr)

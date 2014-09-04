@@ -8,6 +8,8 @@ from dateutil import parser as dateparser
 from memento_proxy import *
 import requests
 
+__author__="aalsum"
+
 end_point = 'http://webcache.googleusercontent.com/search?q=cache:'
 
 

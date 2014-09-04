@@ -28,7 +28,7 @@ class PoHandler(MementoProxy):
         try:
             dom = self.get_xml(uri)
         except:
-            return None
+            return
 
         changes = []
 

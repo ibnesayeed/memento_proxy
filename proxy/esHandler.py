@@ -31,7 +31,7 @@ class EsHandler(MementoProxy):
             resp = requests.get(uri)
             data = resp.content
         except:
-            return self.respond(code=404, msg="Couldn't retrieve data from %s" % uri)
+            return
         regex = r'<a onclick="SetAnchorDate\(\'(.*)\'\);" href="(.*)">'
         uriRegex = re.compile(regex)
 

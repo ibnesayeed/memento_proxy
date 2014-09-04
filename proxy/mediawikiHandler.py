@@ -5,6 +5,7 @@ import urlparse
 from dateutil import parser as dateparser
 from memento_proxy import MementoProxy, now
 
+__author__ = "Harihar Shankar"
 
 class MediawikiHandler(MementoProxy):
 
@@ -53,9 +54,8 @@ class MediawikiHandler(MementoProxy):
         try:
             dom = self.get_xml(req_url, headers=headers, html=True)
         except Exception as e:
-            return self.respond(code=404, msg="Response from %s is not parsable."
-                                              % req_url)
-        
+            return
+
         links = dom.xpath("//link")
         for link in links:
             if link.attrib['rel'].lower() == "edituri":
@@ -156,8 +156,7 @@ class MediawikiHandler(MementoProxy):
         try:
             dom = self.get_xml(req_url, headers=headers, html=True)
         except Exception as e:
-            return self.respond(code=404, msg="Response from %s is not parsable."
-                                              % req_url)
+            return
 
         links = dom.xpath("//link")
         for link in links:

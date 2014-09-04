@@ -1,5 +1,5 @@
 """
-The base class containing all common methods for the proxies.
+The base class containing all common methods that the proxies inherit.
 """
 
 import os
@@ -9,6 +9,8 @@ from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 import requests
 from lxml import etree
 import StringIO
+
+__author__ = "Harihar Shankar"
 
 
 HTTP_STATUS_CODE = {
@@ -92,16 +94,13 @@ class MementoProxy:
 
     def respond(self, code=200, msg="OK", headers=None, set_content_type=True):
         """
-        Sends the appropriate http status code with an
-        error message.
+        Responds to requests with the appropriate http status code and
+        the message body.
+        :return: [http_response]
         """
-
-        #print("HTTP %s: %s" % (code, headers))
 
         if not headers:
             headers = []
-        #if not str(code) == "204" and set_content_type:
-        #    headers.append(("Content-Type", "text/html"))
 
         if code >= 400:
             msg = self.error_tmpl % (code, msg)
@@ -112,6 +111,14 @@ class MementoProxy:
         return [msg]
 
     def get_xml(self, uri, headers=None, html=False):
+        """
+        Retrieves the resource using the url, parses it as XML or HTML
+        and returns the parsed dom object.
+        :param uri: [str] The uri to retrieve
+        :param headers: [dict(header_name: value)] optional http headers to send in the request
+        :param html: [bool] optional flag to parse the response as HTML
+        :return: [lxml_obj] parsed dom.
+        """
 
         if not headers:
             headers = self.hdrs
@@ -125,23 +132,43 @@ class MementoProxy:
             else:
                 parser = etree.HTMLParser(recover=True)
             return etree.parse(StringIO.StringIO(page_data), parser)
-            #return dom.getroot()
         except Exception as e:
             print e
             return self.respond(code=404, msg="Couldn't retrieve data from %s" % uri)
 
     def fetch_changes(self, requri, dt=None):
-        # This is what to implement per proxy
-        # It should return a list of 2-tuples, the first element of each being a datetime, the second a URI
+        """
+        This is what to implement per proxy.
+        It should fetch the mementos for the respective implementation.
+        It should return a list of 2-tuples,
+        :param requri: [str] the requested url, URI-R
+        :param dt: [date_obj] accept datetime.
+        :return: [list[(mem_dt, mem_url)]] list of 2-tuple. the first element of each being a datetime,
+        the second a memento URI.
+        """
         raise NotImplementedError()
 
     def fetch_memento(self, requri, dt=None):
-        # This is what to implement per proxy
-        # It should return a list of 2-tuples, the first element of each being a datetime, the second a URI
+        """
+        Similar to fetch_changes but fetches only the required
+        info to build the memento headers.
+        A special case for wikipedia like systems that have
+        many revisions and may not be feasible to retrieve
+        all of them at once.
+        :param requri: [str] the requested url, URI-R
+        :param dt: [date_obj] accept datetime.
+        :return: [list[(mem_dt, mem_url)]] list of 2-tuple. the first element of each being a datetime,
+        the second a memento URI.
+        """
         raise NotImplementedError()
 
     def handle_timemap(self, req_url):
-        # This generates the TimeMap
+        """
+        Constructs the timemap in link header format. Uses fetch_changes
+        to retrieve the mementos first.
+        :param req_url: the request url.
+        :return: [http_response] the timemap in application/link-format.
+        """
 
         changes = self.fetch_changes(req_url)
 
@@ -182,6 +209,15 @@ class MementoProxy:
         return self.respond(code=200, msg=data, headers=headers, set_content_type=False)
 
     def handle_timegate(self, req_url, acc_dt, wiki=False):
+        """
+        Constructs the memento response for a timegate request.
+        Uses the fetch_memento for wiki like systems or the fetch_changes
+        to get the mementos.
+        :param req_url: [str] the requested url, URI-R
+        :param acc_dt: [date obj] accept datetime
+        :param wiki: [bool] if the request is for a wiki like proxy.
+        :return: [http_response] the memento timegate http headers with a 302.
+        """
         nowd = now()
         current = dateparser.parse(nowd)
 
@@ -252,17 +288,33 @@ class MementoProxy:
             loc = last
             prev = changes[-1]
         else:
-            # Else find closest
+            tdiff = lambda y, x: float(abs((y-x).days * 86400) + abs((y-x).seconds))
             for c in range(1, len(changes)):
                 this = changes[c]
                 if acc_dt < this[0] or c == len(changes)-1:
                     llast = changes[c-1]
+                    if wiki:
+                        # the closest back in time is the best memento
+                        loc = llast
+                        if c-2 >= 0:
+                            prev = changes[c-2]
+                        next = this
+                    else:
+                        # Else find closest delta
+                        tdelta1 = tdiff(llast[0], acc_dt)
+                        tdelta2 = tdiff(this[0], acc_dt)
 
-                    # Closest Memento to request is previous
-                    loc = llast
-                    if c-2 >= 0:
-                        prev = changes[c-2]
-                    next = this
+                        if tdelta1 < tdelta2:
+                            # Closest Memento to request is previous
+                            loc = llast
+                            if c-2 >= 0:
+                                prev = changes[c-2]
+                            next = this
+                        else:
+                            loc = this
+                            prev = llast
+                            if c < len(changes)-1:
+                                next = changes[c+1]
                     break
                     
         headers.append(('Link', self.construct_link_header(links, first, last, loc, next, prev)))
@@ -270,8 +322,19 @@ class MementoProxy:
         return self.respond(msg='', code=302, headers=headers)
 
     def construct_link_header(self, links, first, last, curr=None, next=None, prev=None):
-        mylinks = []
+        """
+        Constructs the memento link header with the appropriate
+        rel types.
+        :param links: [list[str]] Any existing link header entries like orginal, tg, tm
+        :param first: [tuple(mem_dt, mem_uri)] the first memento
+        :param last: [tuple(mem_dt, mem_uri)] the lastmemento
+        :param curr: [tuple(mem_dt, mem_uri)] the memento
+        :param next: [tuple(mem_dt, mem_uri)] the next memento
+        :param prev: [tuple(mem_dt, mem_uri)] the prev memento
+        :return: [str] the memento link header.
+        """
 
+        mylinks = []
         # Do first Memento
         dt = first[0].strftime(self.date_format)
         uri = first[1]

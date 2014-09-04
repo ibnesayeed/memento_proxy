@@ -7,6 +7,7 @@ import StringIO
 from lxml import etree
 from memento_proxy import *
 
+__author__ = "Robert Sanderson"
 
 baseuri = "http://www.collectionscanada.gc.ca/webarchives/*/"
 
@@ -25,7 +26,7 @@ class CanHandler(MementoProxy):
 
         alist = dom.xpath('//div[@class="inner-content"]//a')
         if not alist:
-            return None
+            return
 
         changes = []
         for a in alist:

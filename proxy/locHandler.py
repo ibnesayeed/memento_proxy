@@ -6,6 +6,8 @@ import bsddb as bdb
 from lxml import etree
 from memento_proxy import *
 
+__author__ = "Robert Sanderson"
+
 
 class LocHandler(MementoProxy):
 
@@ -36,7 +38,7 @@ class LocHandler(MementoProxy):
                 curi = 'http://' + curi[11:]
                 (key, val) = c.set_range(curi)
                 if not key.startswith(curi) and not requri.startswith(key):
-                    return []
+                    return
 
 
         collections = {}

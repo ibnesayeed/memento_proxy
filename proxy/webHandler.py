@@ -10,6 +10,8 @@ from lxml import etree
 
 from memento_proxy import *
 
+__author__ = "Robert Sanderson"
+
 
 class WebHandler(MementoProxy):
 
@@ -32,13 +34,12 @@ class WebHandler(MementoProxy):
             wcurl = 'http://webcitation.org/5k9j4oXPw'
         elif not requri.endswith('html') and not requri.endswith('htm'):
             # It's always framed :(
-            return []
+            return
         else:
             wcurl = 'http://webcitation.org/query.php?url=' + requri
 
         txheaders = {'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'}
 
-        print wcurl
         req = urllib2.Request(wcurl, None, txheaders)
         fh = urllib2.urlopen(req)
         fh.close()
@@ -54,7 +55,7 @@ class WebHandler(MementoProxy):
             parser = etree.HTMLParser()
             dom = etree.parse(StringIO.StringIO(data), parser)
         except:
-            return changes
+            return
 
         opts = dom.xpath('//select[@name="id"]/option')
         for o in opts:
